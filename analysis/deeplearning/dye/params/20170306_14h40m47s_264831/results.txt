@@ -1,0 +1,2 @@
+Best result is:
+valid cost: 0.0222; error: 1.51 % at epoch: 56.0:
