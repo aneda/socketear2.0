@@ -1,4 +1,3 @@
 *.pyc
 guides/data
-analysis/
 __pycache__

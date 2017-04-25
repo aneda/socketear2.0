@@ -2,8 +2,10 @@ from PyQt5 import QtCore, QtWidgets
 from time import sleep
 import sys, os
 
-class ConstantProgressBar(QtWidgets.QWidget):
+class ConstantProgressBar(QtWidgets.QDialog):
 
+    def __init__(self, parent, n):
+        super().__init__()
     def __init__(self, parent=None):
         super(ConstantProgressBar, self).__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
@@ -15,20 +17,23 @@ class ConstantProgressBar(QtWidgets.QWidget):
         self.progressBar.show()
         self.progressBar.setRange(0, 1)
         layout.addWidget(self.progressBar)
-        self.button = QtWidgets.QPushButton("Start", self)
-        layout.addWidget(self.button)
+        # self.button = QtWidgets.QPushButton("Start", self)
+        # layout.addWidget(self.button)
 
         self.progressBar.show()
         QtCore.QCoreApplication.instance().processEvents()
 
-        self.button.clicked.connect(self.onStart)
+        # self.button.clicked.connect(self.onStart)
 
         self.myLongTask = TaskThread()
         self.myLongTask.taskFinished.connect(self.onFinished)
 
     def onStart(self):
+        print("progress bar is starting")
         self.progressBar.setRange(0, 0)
         self.myLongTask.start()
+        QtWidgets.QApplication.processEvents()
+        self.progressBar.show()
 
     def onFinished(self):
         # Stop the pulsation
@@ -41,7 +46,7 @@ class ConstantProgressBar(QtWidgets.QWidget):
 class TaskThread(QtCore.QThread):
     taskFinished = QtCore.pyqtSignal()
     def run(self):
-        sleep(9)
+        sleep(10)
         self.taskFinished.emit()
 
 if __name__ == "__main__":

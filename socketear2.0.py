@@ -905,17 +905,19 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
     def run_excel_macro(self, path):
 
         try:
-            xlApp = win32com.client.DispatchEx('Excel.Application')
-            xlsPath = os.path.expanduser(os.path.join(path, 'MacroTest.xlsm'))
-            macroxl = xlApp.Workbooks.Open(Filename=xlsPath)
-            xlApp.Run('MacroTest')
+            xlApp = win32com.client.Dispatch('Excel.Application')
+            xlsPath = os.path.abspath(os.path.join(path, 'MacroTest.xlsm'))
+            print(xlsPath)
+            macroxl = xlApp.Workbooks.Open(xlsPath)
+            xlApp.Run('MacroTest.xlsm!TEST_1')
             macroxl.Save()
             xlApp.Quit()
             print("Macro ran successfully!")
 
         except Exception as e:
             print("Error found while running the excel macro!")
-            print(e)
+            raise
+
 
     def load_image(self, root):
         """Construct the board image and load it on matplotlib container."""
@@ -976,6 +978,10 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
             additionalCrop = settings_dict['additionalCrop']
             b2p_ratio = int(settings_dict['b2p_ratio'])
             device = settings_dict['device']
+
+            from progress_bar import ConstantProgressBar
+            progress_dialog = ConstantProgressBar()
+            progress_dialog.onStart()
 
             from guides.generalguide import GeneralGuide
 
