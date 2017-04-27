@@ -2,56 +2,57 @@ from PyQt5 import QtCore, QtWidgets
 from time import sleep
 import sys, os
 
-class ConstantProgressBar(QtWidgets.QDialog):
 
-    def __init__(self, parent, n):
-        super().__init__()
-    def __init__(self, parent=None):
-        super(ConstantProgressBar, self).__init__(parent)
+class ConstantProgressBar(QtWidgets.QDialog):
+    def __init__(self, task_thread):
+        super(ConstantProgressBar, self).__init__()
+
         layout = QtWidgets.QVBoxLayout(self)
 
         # Create a progress bar and a button and add them to the main layout
         self.progressBar = QtWidgets.QProgressBar(self)
         self.progressBar.resize(400, 81)
         self.progressBar.setMinimumSize(QtCore.QSize(400, 81))
-        self.progressBar.show()
-        self.progressBar.setRange(0, 1)
+        self.progressBar.setRange(0, 0)
+        self.progressBar.setValue(0)
+
         layout.addWidget(self.progressBar)
         # self.button = QtWidgets.QPushButton("Start", self)
         # layout.addWidget(self.button)
 
-        self.progressBar.show()
-        QtCore.QCoreApplication.instance().processEvents()
-
-        # self.button.clicked.connect(self.onStart)
-
-        self.myLongTask = TaskThread()
-        self.myLongTask.taskFinished.connect(self.onFinished)
+        # QtCore.QCoreApplication.instance().processEvents()
+        self.task_thread = task_thread
+        self.task_thread.finished.connect(self.onFinished)
+        self.onStart()
 
     def onStart(self):
         print("progress bar is starting")
         self.progressBar.setRange(0, 0)
-        self.myLongTask.start()
-        QtWidgets.QApplication.processEvents()
-        self.progressBar.show()
+        self.progressBar.setValue(0)
+        self.show()
+        self.task_thread.start()
 
     def onFinished(self):
+        print("progress bar is done")
         # Stop the pulsation
         self.progressBar.setRange(0, 1)
         self.progressBar.setValue(1)
-        QtWidgets.QApplication.processEvents()
-        self.progressBar.show()
+        sleep(2)
+        # self.hide()
+        self.accept()
 
 
 class TaskThread(QtCore.QThread):
-    taskFinished = QtCore.pyqtSignal()
     def run(self):
-        sleep(10)
-        self.taskFinished.emit()
+        print("task is running")
+        for i in range(3):
+            print('im sleeping %s' % i)
+            sleep(1)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    window = ConstantProgressBar()
+    task_thread = TaskThread()
+    window = ConstantProgressBar(task_thread)
     window.resize(640, 480)
     window.show()
     sys.exit(app.exec_())

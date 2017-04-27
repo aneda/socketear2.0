@@ -979,27 +979,33 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
             b2p_ratio = int(settings_dict['b2p_ratio'])
             device = settings_dict['device']
 
+            class TaskThread(QtCore.QThread):
+                def run(self):
+                    print("task is running")
+                    try:
+                        from guides.generalguide import GeneralGuide
+                        guide = GeneralGuide(guidePath, b2p_ratio)
+
+                        from model import Model
+                        valid_additionalCrop = None if additionalCrop == 'None' else (int(additionalCrop), int(additionalCrop))
+
+                        f_model = Model(sampleID, analysisType, guide, valid_additionalCrop, rawImgPath, segDataPath, cropSavePath, savePath, device)
+
+                        from time import time
+                        st = time()
+                        print('Starting the analysis...')
+                        f_model(saveResults=True)
+                        sp = time() - st
+                        print('Analysis took {} seconds'.format(sp))
+                    except Exception as e:
+                        print(e)
+
+            task_thread = TaskThread()
+
             from progress_bar import ConstantProgressBar
-            progress_dialog = ConstantProgressBar()
-            progress_dialog.onStart()
-
-            from guides.generalguide import GeneralGuide
-
-            guide = GeneralGuide(guidePath, b2p_ratio)
-
-            from model import Model
-
-            additionalCrop = None if additionalCrop == 'None' else (int(additionalCrop), int(additionalCrop))
-
-            f_model = Model(sampleID, analysisType, guide, additionalCrop, rawImgPath, segDataPath,
-                            cropSavePath, savePath, device)
-
-            from time import time
-            st = time()
-            print('Starting the analysis...')
-            f_model(saveResults=True)
-            sp = time() - st
-            print('Analysis took {} seconds'.format(sp))
+            progress_dialog = ConstantProgressBar(task_thread)
+            exit_code = progress_dialog.exec_()
+            print(exit_code)
 
             json.dump(settings_dict, open(os.path.join(savePath, 'info.txt'), 'w'), indent=4)
 
