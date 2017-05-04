@@ -17,7 +17,7 @@ import numpy as np
 from threading import Timer
 
 from PyQt5 import QtWidgets, QtGui, QtCore
-from intel_window import Ui_MainWindow
+from intel_window_text import Ui_MainWindow
 from settings_popup import Ui_SettingsWindow
 
 import matplotlib
@@ -149,6 +149,7 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
         self.type_e_button.disconnect()
         self.refresh_sjr_button.disconnect()
         self.refresh_sjq_button.disconnect()
+        self.sjr_image_button.disconnect()
         self.export_action.disconnect()
         self.export_action.setDisabled(True)
 
@@ -367,6 +368,21 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # print('start_refresh: ', datetime.now() - start_refresh)
 
+    def sjr_image_switch(self):
+        """Switch the pin image and dyed pin image for SJR models."""
+
+        print("switch the pin/ dye image!")
+
+        pin_index = self.mpl_figs.currentItem().data(32)
+        if self.pin_dye_image == self.df_cls.ix[pin_index, 'Image Path']:
+            self.pin_image.setPixmap(QtGui.QPixmap(QtGui.QImage(self.df_cls.ix[pin_index, 'DYE Image Path'])))
+            self.pin_dye_image = self.df_cls.ix[pin_index, 'DYE Image Path']
+
+        elif self.pin_dye_image == self.df_cls.ix[pin_index, 'DYE Image Path']:
+            self.pin_image.setPixmap(QtGui.QPixmap(QtGui.QImage(self.df_cls.ix[pin_index, 'Image Path'])))
+            self.pin_dye_image = self.df_cls.ix[pin_index, 'Image Path']
+
+
     def on_click(self, event):
 
         if not event.inaxes:
@@ -479,10 +495,10 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
         And activate the appropriate radio button.
         """
 
+        self.pin_dye_image = self.df_cls.ix[pin_index, 'Image Path']
         self.pin_image.setScaledContents(True)
         self.pin_image.setPixmap(QtGui.QPixmap(
-                                 QtGui.QImage(self.df_cls.ix[pin_index,
-                                              'Image Path'])))
+                                 QtGui.QImage(self.pin_dye_image)))
 
         if self.board_type == 'SJR':
 
@@ -572,6 +588,7 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.type_d_button.setDisabled(False)
                 self.type_e_button.setDisabled(False)
                 self.refresh_sjr_button.setDisabled(False)
+                self.sjr_image_button.setDisabled(False)
 
             elif not(self.df_cls['SJR'].isnull().all()) and \
                     not(self.df_cls['SJQ'].isnull().all()) and \
@@ -596,6 +613,7 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.type_d_button.setDisabled(True)
                 self.type_e_button.setDisabled(True)
                 self.refresh_sjr_button.setDisabled(True)
+                self.sjr_image_button.setDisabled(True)
 
             else:
                 raise ValueError('Incomplete CSV file')
@@ -640,6 +658,8 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
             self.list_items = {}
 
         count_image_cat = 0
+
+        # Create a list of the 'Image Path'  column
         image_path_values = self.df_cls['Image Path'].values.tolist()
         for image_path in self.df_cls['Image Path'].tolist():
 
@@ -711,6 +731,9 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
         # Create a column in the dataframe to store the image paths
         self.df_cls['Image Path'] = np.nan
 
+        # Create a column in the dataframe to store the DYE image paths
+        self.df_cls['DYE Image Path'] = np.nan
+
         # Matching the pins with the correct image and adding them to
         # the 'Image Path' column
 
@@ -731,6 +754,22 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
                     # adding the pin's image path to the same row in the dataframe
                     # where the pin is located
                     self.df_cls.loc[index, 'Image Path'] = image_path
+
+        if self.board_type == 'SJR':
+            if 'dye' in os.listdir(os.path.join(root, '')):
+                for f in os.listdir(os.path.join(root, 'dye')):
+                    dye_path = os.path.join(os.getcwd(),
+                                            os.path.join(root, 'dye'), f)
+                    pin_name = os.path.basename(image_path).replace("_1.tif", "")
+
+                    if pin_name in df_pin_list:
+
+                        index = self.df_cls[self.df_cls['Pin'] == pin_name].index[0]
+
+                        self.df_cls.loc[index, 'DYE Image Path'] = dye_path
+            else:
+                print('Unable to locate the DYE folder.  Thus no dye images')
+
 
         self.pin_dividers()
 
@@ -895,6 +934,8 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
         self.refresh_sjq_button.clicked.connect(self.refresh_sjq_clicked)
 
         self.refresh_sjr_button.clicked.connect(self.refresh_sjr_clicked)
+
+        self.sjr_image_button.clicked.connect(self.sjr_image_switch)
 
         self.canvas.callbacks.connect('button_press_event', self.on_click)
 
