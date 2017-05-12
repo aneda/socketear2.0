@@ -371,12 +371,7 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
     def sjr_image_switch(self):
         """Switch the pin image and dyed pin image for SJR models."""
 
-        print("switch the pin/ dye image!")
-        print(self.df_cls)
-
         pin_index = self.mpl_figs.currentItem().data(32)
-        print(self.df_cls.loc[pin_index, 'Image Path'])
-        print(self.df_cls.loc[pin_index, 'DYE Image Path'])
 
         if self.pin_dye_image == self.df_cls.loc[pin_index, 'Image Path']:
             self.pin_dye_image = self.df_cls.loc[pin_index, 'DYE Image Path']
