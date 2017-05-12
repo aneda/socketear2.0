@@ -33,7 +33,7 @@ import matplotlib.image as mpimg
 
 import matplotlib.gridspec as gridspec
 
-import win32com.client
+# import win32com.client
 
 import json
 
@@ -188,7 +188,7 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Saving the CSV file
         header = ['Row', 'Col', 'StitchedX', 'StitchedY', 'Pin', 'SJQ', 'SJR', 'DYE', 'SJQ Correction',
-                  'SJR Correction', 'DYE Correction', 'Type Change', 'Sorted SJQ', 'Image Path', 'Label Coords']
+                  'SJR Correction', 'DYE Correction', 'Type Change', 'Sorted SJQ', 'Image Path', 'Label Coords', 'DYE Image Path']
         self.df_cls.to_csv(os.path.join(csv_path, 'classification.csv'), columns=header)
 
     def nwo_button_clicked(self, enabled):
@@ -372,15 +372,20 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
         """Switch the pin image and dyed pin image for SJR models."""
 
         print("switch the pin/ dye image!")
+        print(self.df_cls)
 
         pin_index = self.mpl_figs.currentItem().data(32)
-        if self.pin_dye_image == self.df_cls.ix[pin_index, 'Image Path']:
-            self.pin_image.setPixmap(QtGui.QPixmap(QtGui.QImage(self.df_cls.ix[pin_index, 'DYE Image Path'])))
-            self.pin_dye_image = self.df_cls.ix[pin_index, 'DYE Image Path']
+        print(self.df_cls.loc[pin_index, 'Image Path'])
+        print(self.df_cls.loc[pin_index, 'DYE Image Path'])
 
-        elif self.pin_dye_image == self.df_cls.ix[pin_index, 'DYE Image Path']:
-            self.pin_image.setPixmap(QtGui.QPixmap(QtGui.QImage(self.df_cls.ix[pin_index, 'Image Path'])))
-            self.pin_dye_image = self.df_cls.ix[pin_index, 'Image Path']
+        if self.pin_dye_image == self.df_cls.loc[pin_index, 'Image Path']:
+            self.pin_dye_image = self.df_cls.loc[pin_index, 'DYE Image Path']
+            self.pin_image.setPixmap(QtGui.QPixmap(QtGui.QImage(self.pin_dye_image)))
+            
+
+        elif self.pin_dye_image == self.df_cls.loc[pin_index, 'DYE Image Path']:
+            self.pin_dye_image = self.df_cls.loc[pin_index, 'Image Path']
+            self.pin_image.setPixmap(QtGui.QPixmap(QtGui.QImage(self.pin_dye_image)))
 
 
     def on_click(self, event):
@@ -758,17 +763,20 @@ class LoadImage(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.board_type == 'SJR':
             if 'dye' in os.listdir(os.path.join(root, '')):
                 for f in os.listdir(os.path.join(root, 'dye')):
+
                     dye_path = os.path.join(os.getcwd(),
                                             os.path.join(root, 'dye'), f)
-                    pin_name = os.path.basename(image_path).replace("_1.tif", "")
+                    pin_name = os.path.basename(dye_path).replace("_1.tif", "")
 
                     if pin_name in df_pin_list:
 
                         index = self.df_cls[self.df_cls['Pin'] == pin_name].index[0]
 
                         self.df_cls.loc[index, 'DYE Image Path'] = dye_path
+                        
             else:
-                print('Unable to locate the DYE folder.  Thus no dye images')
+                print('Unable to locate the DYE folder. Thus no dye images')
+                self.sjr_image_button.setDisabled(True)
 
 
         self.pin_dividers()
